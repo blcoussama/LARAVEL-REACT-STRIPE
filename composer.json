@@ -1,9 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "blcoussama/laravel-react-stripe",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "SaaS à crédits (Laravel 12, Inertia.js, React) avec achat de packs via Stripe Checkout.",
+    "keywords": [
+        "laravel",
+        "inertia",
+        "react",
+        "stripe",
+        "saas"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
