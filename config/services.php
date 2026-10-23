@@ -28,6 +28,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'stripe' => [
+        // Clé secrète de l'API (mode test : sk_test_...). Jamais exposée au navigateur.
+        'secret' => env('STRIPE_SECRET_KEY'),
+        // Secret de signature des webhooks (whsec_...), fourni par « stripe listen » ou le tableau de bord.
+        'webhook_secret' => env('STRIPE_WEBHOOK_KEY'),
+        'currency' => env('STRIPE_CURRENCY', 'usd'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

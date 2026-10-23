@@ -7,107 +7,82 @@ use App\Http\Resources\PackageResource;
 use App\Models\Feature;
 use App\Models\Package;
 use App\Models\Transaction;
-use Illuminate\Support\Facades\Auth;
-// use Illuminate\Http\Request;
+use App\Services\StripeCheckout;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Inertia\Response;
+use Stripe\Exception\ApiErrorException;
 
 class CreditController extends Controller
 {
-    public function Index()
+    public function index(): Response
     {
-        $packages = Package::all();
-        $features = Feature::where('active', true)->get();
-        return inertia("Credit/Index", [
-            'packages' => PackageResource::collection($packages),
-            'features' => FeatureResource::collection($features),
+        return inertia('Credit/Index', [
+            'packages' => PackageResource::collection(Package::query()->orderBy('price_cents')->get()),
+            'features' => FeatureResource::collection(Feature::query()->where('is_active', true)->get()),
             'success' => session('success'),
             'error' => session('error'),
         ]);
-
-
     }
 
-    public function buyCredits(Package $package)
+    /**
+     * Ouvre une session Stripe Checkout et enregistre une transaction « pending ».
+     * Les crédits ne sont ajoutés que par le webhook signé (voir StripeWebhookController).
+     */
+    public function buyCredits(Request $request, Package $package, StripeCheckout $checkout): RedirectResponse
     {
-        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET_KEY'));
-        $checkout_session = $stripe->checkout->sessions->create([
-            'line_items' => [
-                [
-                    'price_data' => [
-                        'currency' => 'usd',
-                        'product_data' => [
-                            'name' => $package->name . ' - ' . $package->credits . ' credits ',
-                        ],
-                        'unit_amount' => $package->price * 100,
-                    ],
-                    'quantity' => 1,
-                ]
-            ],
-            'mode' => 'payment',
-            'success_url' => route('credit.success', [], true),
-            'cancel_url' => route('credit.cancel', [], true),
-        ]);
-
-        Transaction::create([
-            'status' => 'pending',
-            'price' => $package->price,
-            'credits' => $package->credits,
-            'session_id' => $checkout_session->id,
-            'user_id' => Auth::id(),
-            'package_id' => $package->id
-        ]);
-
-        return redirect($checkout_session->url);
-    }
-
-    public function success()
-    {
-        return to_route('credit.index')->with('success', 'You have Successfully brought new     credits.');
-    }
-
-    public function cancel()
-    {
-        return to_route('credit.index')->with('error', 'There was an error within the payment process. Please try again.');
-    }
-
-    public function webhook()
-    {
-        $endpoint_secret = env('STRIPE_WEBHOOK_KEY');
-
-        $payload = @file_get_contents('php://input');
-        $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-        $event = null;
+        if (! $checkout->isConfigured()) {
+            return to_route('credit.index')->with('error', 'Online payment is not configured on this server.');
+        }
 
         try {
-            $event = \Stripe\Webhook::constructEvent(
-                $payload,
-                $sig_header,
-                $endpoint_secret
-            );
-        } catch (\UnexpectedValueException $e) {
-            // Invalid payload
-            return response('', 400);
+            $session = $checkout->createSession($package, $request->user());
+        } catch (ApiErrorException $e) {
+            Log::error('Stripe Checkout session creation failed.', ['message' => $e->getMessage()]);
 
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
-            // Invalid signature
-            return response('', 400);
+            return to_route('credit.index')->with('error', 'The payment could not be started. Please try again later.');
         }
 
-        // Handle the event
-        switch ($event->type) {
-            case 'checkout.session.completed':
-                $session = $event->data->object; // contains a \Stripe\Checkout\Session
-                $transaction = Transaction::where('session_id', $session->id)->first();
-                if ($transaction && $transaction->status === 'pending') {
+        $request->user()->transactions()->create([
+            'status' => Transaction::STATUS_PENDING,
+            'price_cents' => $package->price_cents,
+            'credits' => $package->credits,
+            'session_id' => $session->id,
+            'package_id' => $package->id,
+        ]);
 
-                }
-
-            // ... handle other event types
-            default:
-                echo 'Received unknown event type' . $event->type;
-        }
-
-        return response('');
+        return redirect()->away($session->url);
     }
 
+    /**
+     * Retour depuis Stripe. Cette page ne crédite rien : elle affiche l'état de la
+     * transaction de l'utilisateur connecté, mis à jour par le webhook.
+     */
+    public function success(Request $request): RedirectResponse
+    {
+        $transaction = $request->user()
+            ->transactions()
+            ->where('session_id', (string) $request->query('session_id'))
+            ->first();
 
+        if (! $transaction) {
+            return to_route('credit.index')->with('error', 'We could not find this payment.');
+        }
+
+        if ($transaction->status === Transaction::STATUS_PAID) {
+            return to_route('credit.index')->with('success', "Payment confirmed: {$transaction->credits} credits were added to your account.");
+        }
+
+        if ($transaction->status === Transaction::STATUS_PENDING) {
+            return to_route('credit.index')->with('success', 'Thank you! Your payment is being confirmed by Stripe. Your credits will appear in a few moments.');
+        }
+
+        return to_route('credit.index')->with('error', 'This payment was not completed. No credits were added.');
+    }
+
+    public function cancel(): RedirectResponse
+    {
+        return to_route('credit.index')->with('error', 'The payment was canceled. You have not been charged.');
+    }
 }
