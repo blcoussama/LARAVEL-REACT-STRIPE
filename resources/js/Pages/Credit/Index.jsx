@@ -25,11 +25,11 @@ export default function Index({ auth, packages, features, success, error}) {
                     <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-xs sm:rounded-lg relative">
                         <div className="flex flex-col gap-3 items-center p-4">
                             <img
-                                src="/img/coing.png"
+                                src="/img/coin.svg"
                                 alt=""
                                 className="w-[100px]"
                             />
-                            <h3 className="text-white text-2xl">You have {availableCredits} credits.</h3>
+                            <h3 className="text-gray-800 dark:text-white text-2xl">You have {availableCredits} credits.</h3>
                         </div>
                     </div>
 

@@ -3,21 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\UsedFeatureResource;
-use App\Models\UsedFeature;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index()
+    /**
+     * Historique paginé des fonctionnalités utilisées par l'utilisateur connecté.
+     */
+    public function index(Request $request): Response
     {
-        $usedFeatures = UsedFeature::query()
-            ->with(['feature'])
-            ->where('user_id', auth()->user()->id)
+        $usedFeatures = $request->user()
+            ->usedFeatures()
+            ->with('feature')
             ->latest()
-            ->paginate();
+            ->latest('id')
+            ->paginate(10);
 
-        return Inertia::render('Dashboard', [
+        return inertia('Dashboard', [
             'usedFeatures' => UsedFeatureResource::collection($usedFeatures),
         ]);
     }

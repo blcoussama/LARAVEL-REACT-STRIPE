@@ -5,55 +5,69 @@ namespace Database\Seeders;
 use App\Models\Feature;
 use App\Models\Package;
 use App\Models\Transaction;
+use App\Models\UsedFeature;
 use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Données de démonstration (factices). Les icônes sont des SVG locaux (public/img).
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'oussama',
-            'email' => 'oussama@gmail.com',
-            'password' => bcrypt('password123'),
-            'available_credits' => 50, // Explicitly set credits
-        ]);
-
-        Feature::create([
+        $sum = Feature::create([
             'route_name' => 'feature1.index',
-            'image' => 'https://images.unsplash.com/photo-1662947190722-5d272f82a526?q=80&w=2728&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+            'image' => '/img/feature-sum.svg',
             'name' => 'Calculate Sum',
             'description' => 'Calculate the sum of two numbers.',
             'required_credits' => 1,
             'is_active' => true,
         ]);
-        Feature::create([
+
+        $difference = Feature::create([
             'route_name' => 'feature2.index',
-            'image' => 'https://i0.wp.com/blog.openapihub.com/wp-content/uploads/2022/08/Slide1-1.jpg?resize=1200%2C675&ssl=1',
+            'image' => '/img/feature-difference.svg',
             'name' => 'Calculate Difference',
             'description' => 'Calculate the difference between two numbers.',
             'required_credits' => 3,
             'is_active' => true,
         ]);
 
-        Package::create([
-            'name' => 'Basic Package',
-            'price' => 9.99,
-            'credits' => 20,
+        Package::create(['name' => 'Basic Package', 'price_cents' => 999, 'credits' => 20]);
+        $silver = Package::create(['name' => 'Silver Package', 'price_cents' => 9999, 'credits' => 100]);
+        Package::create(['name' => 'Golden Package', 'price_cents' => 19999, 'credits' => 500]);
+
+        // Compte de démonstration : 10 crédits de bienvenue + un achat déjà payé + un historique d'utilisation.
+        $demo = User::factory()->create([
+            'name' => 'Demo User',
+            'email' => 'demo@example.com',
         ]);
-        Package::create([
-            'name' => 'Silver Package',
-            'price' => 99.99,
-            'credits' => 100,
+
+        $demo->transactions()->create([
+            'status' => Transaction::STATUS_PAID,
+            'price_cents' => $silver->price_cents,
+            'credits' => $silver->credits,
+            'session_id' => 'cs_test_demo_seed',
+            'package_id' => $silver->id,
         ]);
-        Package::create([
-            'name' => 'Golden Package',
-            'price' => 199.99,
-            'credits' => 500,
-        ]);
+        $demo->addCredits($silver->credits);
+
+        foreach (range(1, 14) as $i) {
+            $feature = $i % 2 === 0 ? $difference : $sum;
+
+            if (! $demo->spendCredits($feature->required_credits)) {
+                break;
+            }
+
+            (new UsedFeature)->forceFill([
+                'feature_id' => $feature->id,
+                'user_id' => $demo->id,
+                'credits' => $feature->required_credits,
+                'data' => ['number1' => 10 * $i, 'number2' => $i],
+                'created_at' => now()->subHours(15 - $i),
+                'updated_at' => now()->subHours(15 - $i),
+            ])->save();
+        }
     }
 }

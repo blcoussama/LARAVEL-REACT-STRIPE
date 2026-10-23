@@ -46,11 +46,11 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                         <div className="hidden sm:flex sm:items-center sm:ms-6 gap-3">
-                            <span className='text-white flex gap-3'>
-                                <img src="/img/coin.png" alt="" className='w-[20px]' />
+                            <span className='flex items-center gap-2 text-sm font-medium text-gray-700'>
+                                <img src="/img/coin.svg" alt="" className="w-[20px]" />
                                 {user.available_credits} Credits
                             </span>
-                            <Link href={route('credit.index')} className='text-white py-1 px-3 rounded-sm border transition-colors hover:text-gray-800 hover:bg-white'>
+                            <Link href={route('credit.index')} className='rounded-sm border border-gray-300 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-800 hover:text-white'>
                                 Get More
                             </Link>
                             <div className="relative ms-3">
@@ -164,6 +164,12 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('feature2.index')}
                         >
                             Feature2
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('credit.index')}
+                            active={route().current('credit.index')}
+                        >
+                            {user.available_credits} Credits · Get More
                         </ResponsiveNavLink>
                     </div>
 
