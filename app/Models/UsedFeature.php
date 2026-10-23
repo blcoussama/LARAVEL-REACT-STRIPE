@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UsedFeature extends Model
 {
@@ -13,22 +14,29 @@ class UsedFeature extends Model
         'feature_id',
         'user_id',
         'credits',
-        'data'
+        'data',
     ];
 
     protected function casts(): array
     {
         return [
             'data' => 'array',
+            'credits' => 'integer',
         ];
     }
 
-    public function user()
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function feature()
+    /**
+     * @return BelongsTo<Feature, $this>
+     */
+    public function feature(): BelongsTo
     {
         return $this->belongsTo(Feature::class);
     }

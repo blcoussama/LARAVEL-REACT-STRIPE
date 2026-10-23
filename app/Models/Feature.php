@@ -17,4 +17,12 @@ class Feature extends Model
         'required_credits',
         'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'required_credits' => 'integer',
+            'is_active' => 'boolean',
+        ];
+    }
 }

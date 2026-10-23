@@ -2,58 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\FeatureResource;
-use App\Models\Feature;
-use App\Models\UsedFeature;
-use Illuminate\Http\Request;
-
-class Feature1Controller extends Controller
+/**
+ * Feature 1 : somme de deux nombres.
+ */
+class Feature1Controller extends FeatureController
 {
-    public ?Feature $feature = null;
-
-    public function __construct()
+    protected function routeName(): string
     {
-        $this->feature = Feature::where('route_name', 'feature1.index')
-            ->where('is_active', true)
-            ->firstOrFail();
+        return 'feature1.index';
     }
 
-    public function index()
+    protected function page(): string
     {
-        return inertia('Feature1/Index', [
-            'feature' => new FeatureResource($this->feature),
-            'answer' => session('answer')
-        ]);
+        return 'Feature1/Index';
     }
 
-    public function calculate(Request $request)
+    protected function compute(float $number1, float $number2): float
     {
-        $user = $request->user();
-        if ($user->available_credits < $this->feature->required_credits) {
-            return back()->with('error', 'You do not have enough credits to use this feature.');
-        }
-
-        $data = $request->validate([
-            'number1' => 'required|numeric',
-            'number2' => 'required|numeric',
-        ]);
-
-        $number1 = (float) $data['number1'];
-        $number2 = (float) $data['number2'];
-
-        $user->decreaseCredits($this->feature->required_credits);
-
-        UsedFeature::create([
-            'feature_id' => $this->feature->id,
-            'user_id' => $user->id,
-            'credits' => $this->feature->required_credits,
-            'data' => $data
-        ]);
-
-        return to_route('feature1.index')->with('answer', $number1 + $number2);
+        return $number1 + $number2;
     }
-
-
 }
-
-
