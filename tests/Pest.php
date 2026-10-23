@@ -41,7 +41,45 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/** Secret de signature factice, utilisé uniquement par les tests. */
+const TEST_WEBHOOK_SECRET = 'whsec_test_fake_secret_for_tests';
+
+/**
+ * Corps JSON d'un évènement Stripe portant une session Checkout.
+ *
+ * @param  array<string, mixed>  $session
+ */
+function stripeCheckoutEvent(string $type, array $session): string
 {
-    // ..
+    return json_encode([
+        'id' => 'evt_test_'.bin2hex(random_bytes(6)),
+        'object' => 'event',
+        'type' => $type,
+        'data' => ['object' => ['object' => 'checkout.session', ...$session]],
+    ], JSON_THROW_ON_ERROR);
+}
+
+/**
+ * En-tête Stripe-Signature, calculé comme le fait Stripe :
+ * HMAC-SHA256 de « timestamp.payload » avec le secret du endpoint.
+ */
+function stripeSignatureHeader(string $payload, string $secret = TEST_WEBHOOK_SECRET, ?int $timestamp = null): string
+{
+    $timestamp ??= time();
+
+    return 't='.$timestamp.',v1='.hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
+}
+
+/**
+ * Envoie un corps brut au webhook, comme Stripe (pas d'encodage par Laravel).
+ */
+function postStripeWebhook(string $payload, ?string $signature): \Illuminate\Testing\TestResponse
+{
+    $server = ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json'];
+
+    if ($signature !== null) {
+        $server['HTTP_STRIPE_SIGNATURE'] = $signature;
+    }
+
+    return test()->call('POST', '/buy-credits/webhook', [], [], [], $server, $payload);
 }

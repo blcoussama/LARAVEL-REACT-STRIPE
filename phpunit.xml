@@ -19,6 +19,10 @@
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!-- Valeurs factices réservées aux tests : aucune clé réelle, aucun appel à Stripe. -->
+        <env name="APP_KEY" value="base64:bWOaluOGcJtdNcZ8al4Q4LOSesQviERFBZY6eaHUA9s="/>
+        <env name="STRIPE_SECRET_KEY" value="" force="true"/>
+        <env name="STRIPE_WEBHOOK_KEY" value="" force="true"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
