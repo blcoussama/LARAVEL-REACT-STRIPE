@@ -14,7 +14,7 @@ export default function CreditPricingCards({ packages, features }) {
 
                 <div className="space-y-8 lg:grid lg:grid-cols-3 sm:gap-6 xl:gap-10 lg:space-y-0">
                     {packages.map((p) => (
-                        <div key={p.id} className="flex flex-col align-stretch p-6 mx-auto lg:mx-0 max-w-lg text-center border shadow border-gray-600 bg-gray-900 rounded-lg text-white">
+                        <div key={p.id} className="flex flex-col align-stretch p-6 mx-auto lg:mx-0 max-w-lg text-center border shadow-sm border-gray-600 bg-gray-900 rounded-lg text-white">
                             <h3 className="mb-4 text-2xl font-semibold">{p.name}</h3>
                             <div className="flex justify-center items-baseline my-8">
                                 <span className="mb-4 text-3xl font-bold">
@@ -38,7 +38,7 @@ export default function CreditPricingCards({ packages, features }) {
 
                             <form action={route("credits.buy", p)} method="post" className="w-full">
                                 <input type="hidden" name="_token" value={csrf_token} autoComplete="off" />
-                                <button type="submit" className="w-full px-5 py-3 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-none">
+                                <button type="submit" className="w-full px-5 py-3 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 focus:outline-hidden">
                                     Buy Now
                                 </button>
                             </form>

@@ -22,7 +22,7 @@ export default function Index({ auth, packages, features, success, error}) {
                     {success && <div className="rounded-lg bg-emerald-500 text-gray-100 p-3 mb-4">{success}</div>}
                     {error && <div className="rounded-lg bg-red-500 text-gray-100 p-3 mb-4">{error}</div>}
 
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg relative">
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-xs sm:rounded-lg relative">
                         <div className="flex flex-col gap-3 items-center p-4">
                             <img
                                 src="/img/coing.png"
